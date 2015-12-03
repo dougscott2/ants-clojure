@@ -11,7 +11,7 @@
 (def width 800)
 (def height 600)
 (def ant-count 100)
-(def ants (atom nil))                                       ;creates a global container of ants
+(def ants (atom nil))
 (def last-timestamp (atom 0))
 
 (defn create-ants []
@@ -24,10 +24,7 @@
   (- (* 2 (rand)) 1))
 
 
-
-
 (defn move-ant [ant]
-  (Thread/sleep 1)
   (assoc ant :x (+ (random-step) (:x ant))
              :y (+ (random-step) (:y ant))))
 
@@ -44,12 +41,11 @@
     (int (/ 1 diff-seconds))))
 
 (defn aggravate-ant [ant]
-  (Thread/sleep 1)
   (let [filter-ants (filter (fn [anthony]
-                              (and (<= (Math/abs (- (:x ant) (:x anthony))) 30)
-                                   (<= (Math/abs (- (:y ant) (:y anthony))) 30)))
+                              (and (< (Math/abs (- (:x ant) (:x anthony))) 20)
+                                   (< (Math/abs (- (:y ant) (:y anthony))) 20)))
                             (deref ants))]
-    (if (> (count filter-ants) 1)
+    (if (= (count filter-ants) 1)
       (assoc ant :color Color/RED)
       (assoc ant :color Color/BLACK)
       )))
@@ -64,7 +60,7 @@
                 (handle [now]
                   (.setText fps-label (str (fps now)))
                   (reset! last-timestamp now)
-                  (reset! ants (pmap aggravate-ant (pmap move-ant (deref ants))))
+                  (reset! ants (map aggravate-ant (pmap move-ant (deref ants))))
                   (draw-ants context)))]
     (reset! ants (create-ants))
     (doto stage
