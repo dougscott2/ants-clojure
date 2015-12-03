@@ -25,12 +25,13 @@
 (defn move-ant [ant]
   (Thread/sleep 1)
   (assoc ant :x (+ (random-step) (:x ant))
-             :y (+ (random-step) (:y ant))))
+             :y (+ (random-step) (:y ant))
+             :color Color/BLACK ))
 
 (defn draw-ants [context]
   (.clearRect context 0 0 width height)
   (doseq [ant (deref ants)]
-    (.setFill context Color/BLACK )
+    (.setFill context (:color ant))
     (.fillOval context (:x ant) (:y ant) 5 5)))
 
 (defn fps [now]
@@ -38,7 +39,17 @@
         diff-seconds (/ diff 1000000000)]
     (int (/ 1 diff-seconds))))
 
-
+(defn aggravate-ant [ants ant-a ant-b]
+  (let [aggro-ants (ants)
+        (filter (fn [ant]
+                  (and ant
+                       (cond
+                         (<  10 (Math/abs (- (:x ant-a :x ant-b))))
+                         (assoc-in aggro-ants [ant-a ant-b :color] Color/RED)
+                         (<  10 (Math/abs (- (:x ant-a :x ant-b))))
+                         (assoc-in aggro-ants [ant-a ant-b :color] Color/BLACK)))))]
+    aggro-ants)
+  )
 
 (defn -start [app ^Stage stage]
   (let [root (FXMLLoader/load (resource "main.fxml"))
