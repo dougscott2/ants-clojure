@@ -25,6 +25,7 @@
 
 
 (defn move-ant [ant]
+  (Thread/sleep 1)
   (assoc ant :x (+ (random-step) (:x ant))
              :y (+ (random-step) (:y ant))))
 
@@ -41,13 +42,13 @@
     (int (/ 1 diff-seconds))))
 
 (defn aggravate-ant [ant]
-  (let [filter-ants (filter (fn [anthony]
-                              (and (< (Math/abs (- (:x ant) (:x anthony))) 20)
-                                   (< (Math/abs (- (:y ant) (:y anthony))) 20)))
+  (let [aggro-ants (filter (fn [anthony]
+                              (and (<= (Math/abs (- (:x ant) (:x anthony))) 10)
+                                   (<= (Math/abs (- (:y ant) (:y anthony))) 10)))
                             (deref ants))]
-    (if (= (count filter-ants) 1)
-      (assoc ant :color Color/RED)
+    (if (= 1 (count aggro-ants))
       (assoc ant :color Color/BLACK)
+      (assoc ant :color Color/RED)
       )))
 
 (defn -start [app ^Stage stage]
@@ -60,7 +61,7 @@
                 (handle [now]
                   (.setText fps-label (str (fps now)))
                   (reset! last-timestamp now)
-                  (reset! ants (map aggravate-ant (pmap move-ant (deref ants))))
+                  (reset! ants (doall (pmap aggravate-ant (pmap move-ant (deref ants))))) ;doall makes the lazy sequence work
                   (draw-ants context)))]
     (reset! ants (create-ants))
     (doto stage
