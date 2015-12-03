@@ -17,7 +17,8 @@
 (defn create-ants []
   (for [i (range 0 ant-count)]
     {:x (rand-int width)
-     :y (rand-int height)}))
+     :y (rand-int height)
+     :color Color/BLACK}))
 
 (defn random-step []
   (- (* 2 (rand)) 1))
@@ -26,7 +27,7 @@
   (Thread/sleep 1)
   (assoc ant :x (+ (random-step) (:x ant))
              :y (+ (random-step) (:y ant))
-             :color Color/BLACK ))
+              ))
 
 (defn draw-ants [context]
   (.clearRect context 0 0 width height)
@@ -39,17 +40,14 @@
         diff-seconds (/ diff 1000000000)]
     (int (/ 1 diff-seconds))))
 
-(defn aggravate-ant [ants ant-a ant-b]
-  (let [aggro-ants (ants)
-        (filter (fn [ant]
-                  (and ant
-                       (cond
-                         (<  10 (Math/abs (- (:x ant-a :x ant-b))))
-                         (assoc-in aggro-ants [ant-a ant-b :color] Color/RED)
-                         (<  10 (Math/abs (- (:x ant-a :x ant-b))))
-                         (assoc-in aggro-ants [ant-a ant-b :color] Color/BLACK)))))]
-    aggro-ants)
-  )
+(defn aggravate-ant [ant]
+  (let [filter-ants (filter (fn [anthony]
+                              (and (<= (Math/abs (- (:x ant) (:x anthony))) 10)
+                                   (<= (Math/abs (- (:y ant) (:y anthony))) 10)))
+                            (deref ants))]
+    (if (> (count filter-ants) 1)
+      (assoc ant :color Color/RED)
+      (assoc ant :color Color/BLACK))))
 
 (defn -start [app ^Stage stage]
   (let [root (FXMLLoader/load (resource "main.fxml"))
@@ -61,7 +59,7 @@
                 (handle [now]
                   (.setText fps-label (str (fps now)))
                   (reset! last-timestamp now)
-                  (reset! ants (pmap move-ant (deref ants)))
+                  (reset! ants (pmap aggravate-ant (pmap move-ant (deref ants))))
                  (draw-ants context) ))]
     (reset! ants (create-ants))
     (doto stage
