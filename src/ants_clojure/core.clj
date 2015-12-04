@@ -18,14 +18,15 @@
   (for [i (range 0 ant-count)]
     {:x     (rand-int width)
      :y     (rand-int height)
-     :color Color/BLACK}))
+     :color Color/BLACK
+    :size 10}))
 
 (defn random-step []
   (- (* 2 (rand)) 1))
 
 
 (defn move-ant [ant]
-  (Thread/sleep 1)
+  #_(Thread/sleep 1)
   (assoc ant :x (+ (random-step) (:x ant))
              :y (+ (random-step) (:y ant))))
 
@@ -33,7 +34,7 @@
   (.clearRect context 0 0 width height)
   (doseq [ant (deref ants)]
     (.setFill context (:color ant))
-    (.fillOval context (:x ant) (:y ant) 5 5)))
+    (.fillOval context (:x ant) (:y ant) (:size ant) (:size ant))))
 
 
 (defn fps [now]
@@ -48,8 +49,16 @@
                             (deref ants))]
     (if (= 1 (count aggro-ants))
       (assoc ant :color Color/BLACK)
-      (assoc ant :color Color/RED)
+      (assoc ant :color Color/GREEN)
       )))
+(defn hulk-ant [ant]
+  (let [hulk-ants (filter (fn [anthony]
+                            (and (<= (Math/abs (- (:x ant) (:x anthony))) 10)
+                                 (<= (Math/abs (- (:y ant) (:y anthony))) 10)))
+                          (deref ants))]
+    (if (= 1 (count hulk-ants))
+     (assoc ant :size 10)
+     (assoc ant :size 20))))
 
 (defn -start [app ^Stage stage]
   (let [root (FXMLLoader/load (resource "main.fxml"))
@@ -61,7 +70,7 @@
                 (handle [now]
                   (.setText fps-label (str (fps now)))
                   (reset! last-timestamp now)
-                  (reset! ants (doall (pmap aggravate-ant (pmap move-ant (deref ants))))) ;doall makes the lazy sequence work
+                  (reset! ants (doall (pmap hulk-ant (pmap aggravate-ant (pmap move-ant (deref ants)))))) ;doall makes the lazy sequence work
                   (draw-ants context)))]
     (reset! ants (create-ants))
     (doto stage
